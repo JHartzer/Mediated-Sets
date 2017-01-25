@@ -127,7 +127,9 @@ class MaxMediatedSet:
 			
 	
 def power_set(n,size):
-	'''Currently creates the power set of all possible simplicies in dimension n up to a given size in any direction along with the number of repeats for each unique set of points.'''
+	'''Creates the power set of all possible simplicies in dimension 
+	n up to a given size in any direction along with the number of repeats for 
+	each unique set of points.'''
 	all_matricies = []
 	my_dict = {}
 	
@@ -145,38 +147,48 @@ def power_set(n,size):
 			for j in range(len(all_matricies[i][0])):
 				column_vectors.append(all_matricies[i][:,j])
 			for column_permutation in list(itr.permutations(column_vectors)):
-				key = tuple(map(tuple,sorted(tuple(map(tuple,np.column_stack(column_permutation))))))
+				key = tuple(map(tuple,sorted(tuple(map(tuple,np.column_stack(\
+				column_permutation))))))
 				
 				my_dict[key][0] = true
 				my_dict[key][1] = my_dict[key][1] + 1
 	return my_dict
 				
 				
-def CreateDB(Name):
-	'''*'''
+def create_db(Name):
+	'''Creates a database table with a given name for the MMSet type'''
 	conn = sqlite3.connect(Name)
 	c = conn.cursor()
-	c.execute('''CREATE TABLE MMSet (Vertices Text, Max INTEGER, MMSet text, Min integer, Cardinality integer, Orbits integer)''')
+	c.execute('''CREATE TABLE MMSet (Vertices TEXT, MMSet TEXT, 'Max Set Size' 
+	INTEGER, 'MMSet size' INTEGER, 'Min Set Size' INTEGER, Difference INTEGER, 
+	Degree INTEGER, Orbits INTEGER)''')
 	conn.commit()
 	conn.close()
 
 	
-def AddMMSet(Name,Vertices,Max,MMSet,Min,Cardinality,Orbits):
-	'''*'''
+def add_mmset(Name,Vertices,MMSet,Max,SetSize,Min,Degree,Orbits):
+	'''Adds element to the MMSet database table'''
 	conn = sqlite3.connect(Name)
 	c = conn.cursor()
-	addSet = (str(Vertices),int(Max),str(MMSet),int(Min),int(Cardinality),int(Orbits))
-	c.execute("INSERT INTO MMSet VALUES (?,?,?,?,?,?)", addSet)
+	addSet = (str(Vertices),str(MMSet),int(Max),int(SetSize),int(Min),\
+		int(Max-SetSize),int(Degree),int(Orbits))
+	c.execute("INSERT INTO MMSet VALUES (?,?,?,?,?,?,?,?)", addSet)
 	conn.commit()
 
 		
-def CreateDimensionTable(dimension,size):
-	name = "DB_dimension_%s" % (dimension)
+def create_dimension_table(dimension,size):
+	'''Creates a database table for a given dimension up to a certain size. 
+	Generates power set and removes all rotations and counts orbits. Lists 
+	each unique Mediated Set and its maximal set, maximal set size, minimal set
+	size, and orbits.'''
+	name = "DB_dimension_%s.db" % (dimension)
 	my_dict = power_set(dimension,size)
-	CreateDB(name)
+	create_db(name)
 	for key in my_dict:
 		M = MaxMediatedSet(((0,)*dimension,) + key)
-		AddMMSet(name,str(((0,)*dimension,) + key),len(M.lattice),str(M.compute_maxmediatedset()),M.minimal_set_size(),dimension,my_dict[key][1])
+		MMSet = M.compute_maxmediatedset()
+		add_mmset(name,str(((0,)*dimension,) + key),str(MMSet),len(M.lattice),\
+		len(MMSet),M.minimal_set_size(),max(map(sum, key)),my_dict[key][1])
 	
 	
 	

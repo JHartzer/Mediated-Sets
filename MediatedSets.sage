@@ -19,6 +19,7 @@
 # Class for quick building of lattice points
 from sage.geometry.polyhedron.ppl_lattice_polytope import LatticePolytope_PPL
 
+
 # Used to convert the polytope lattice type to a list type
 import numpy as np
 

@@ -1,7 +1,7 @@
 # Class: MaxMediatedSet
 #
 # Author: Jacob Hartzer, Timo de wolff
-# Last Edited: 04 - February - 2016
+# Last Edited: 14 - February - 2016
 #
 # Class written for the analysis of maximal mediated sets
 #

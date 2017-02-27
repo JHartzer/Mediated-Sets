@@ -19,6 +19,8 @@ import itertools as itr
 # Database package
 import sqlite3
 
+import time
+
 class MaxMediatedSet:
     '''Class for analyzing maximal mediated sets and their properties'''
 
@@ -259,6 +261,11 @@ class MaxMediatedSet:
         """
         return len(self.vertices)\
         +((len(self.vertices) - 1)*len(self.vertices)) / 2
+    
+    
+    def orbits(self):
+        return
+    
             
     
 def power_set(n,size):
@@ -317,16 +324,54 @@ def create_dimension_table(dimension,size):
     each unique Mediated Set and its maximal set, maximal set size, minimal set
     size, and orbits.'''
     name = "DB_dimension_%s.db" % (dimension)
+
+    start_time = time.time()   
     my_dict = power_set(dimension,size)
+    print("Power Set  -  %s seconds" % (time.time() - start_time))
+    
+    start_time = time.time() 
     create_db(name)
     for key in my_dict:
         M = MaxMediatedSet(((0,)*dimension,) + key)
         MMSet = M.compute_maxmediatedset()
         add_mmset(name,str(((0,)*dimension,) + key),str(MMSet),len(M.lattice),\
         len(MMSet),M.minimal_set_size(),max(map(sum, key)),my_dict[key][1])
+    print("MMSet      -  %s seconds" % (time.time() - start_time))
     
     
     
+def create_dimension_table_2(dimension,size):    
+    '''Creates a database table for a given dimension up to a certain size. 
+    Generates power set and removes all rotations and counts orbits. Lists 
+    each unique Mediated Set and its maximal set, maximal set size, minimal set
+    size, and orbits.'''
+    name = "DB_dimension_%s.db" % (dimension)
+    
+    all_points = list(itr.product(range(0,size+1,2),repeat = dimension))
+    all_points.remove(tuple([0]*dimension))    
+    
+    comb(dimension, all_points)
+    
+    
+def comb(lst,k):
+    ticker = range(0,k)
+    
+    while true:
+        print(ticker)
+        
+        if ticker[k-1] == len(lst) -1:
+            
+            for i in range(k-2,-1,-1):
+                if ticker[i] + 1 != ticker[i+1]:
+                    break        
+        
+            if i == 0 and ticker[0] +1 == ticker[1]:
+                break
+ 
+            ticker[i] = ticker[i] + 1 
+            
+            ticker[i+1:k] = range(ticker[i]+1,ticker[i] + k - i)
+            ticker[k-1] = ticker[k-1] -1
 
-    
 
+        ticker[k-1] = ticker[k-1] +1

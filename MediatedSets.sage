@@ -318,50 +318,51 @@ def add_mmset(Name,Vertices,MMSet,Max,SetSize,Min,Degree,Orbits):
     conn.commit()
 
         
-def create_dimension_table(dimension,size):
+def create_dimension_table(dim,size):
     '''Creates a database table for a given dimension up to a certain size. 
     Generates power set and removes all rotations and counts orbits. Lists 
     each unique Mediated Set and its maximal set, maximal set size, minimal set
     size, and orbits.'''
-    name = "DB_dimension_%s.db" % (dimension)
+    name = "DB_dimension_%s.db" % (dim)
 
     start_time = time.time()   
-    my_dict = power_set(dimension,size)
+    my_dict = power_set(dim,size)
     print("Power Set  -  %s seconds" % (time.time() - start_time))
     
     start_time = time.time() 
     create_db(name)
     for key in my_dict:
-        M = MaxMediatedSet(((0,)*dimension,) + key)
+        M = MaxMediatedSet(((0,)*dim,) + key)
         MMSet = M.compute_maxmediatedset()
-        add_mmset(name,str(((0,)*dimension,) + key),str(MMSet),len(M.lattice),\
+        add_mmset(name,str(((0,)*dim,) + key),str(MMSet),len(M.lattice),\
         len(MMSet),M.minimal_set_size(),max(map(sum, key)),my_dict[key][1])
     print("MMSet      -  %s seconds" % (time.time() - start_time))
     
     
     
-def create_dimension_table_2(dimension,size):    
+def create_dimension_table_2(dim,size):    
     '''Creates a database table for a given dimension up to a certain size. 
     Generates power set and removes all rotations and counts orbits. Lists 
     each unique Mediated Set and its maximal set, maximal set size, minimal set
     size, and orbits.'''
-    name = "DB_dimension_%s.db" % (dimension)
+    name = "DB_dimension_%s_%s.db" % (dim,size)
     
-    all_points = list(itr.product(range(0,size+1,2),repeat = dimension))
-    all_points.remove(tuple([0]*dimension))    
+    all_points = list(itr.product(range(0,size+1,2),repeat = dim))
+    all_points.remove(tuple([0]*dim))    
+
+    power_set_2(all_points, dim)
     
-    comb(dimension, all_points)
     
-    
-def comb(lst,k):
-    ticker = range(0,k)
+def power_set_2(all_points,dim):
+    ticker = range(0,dim)
     
     while true:
-        print(ticker)
+        if is_base_simplex(ticker,all_points):
+            print(ticker,all_points)
         
-        if ticker[k-1] == len(lst) -1:
+        if ticker[dim-1] == len(all_points) -1:
             
-            for i in range(k-2,-1,-1):
+            for i in range(dim-2,-1,-1):
                 if ticker[i] + 1 != ticker[i+1]:
                     break        
         
@@ -369,9 +370,35 @@ def comb(lst,k):
                 break
  
             ticker[i] = ticker[i] + 1 
-            
-            ticker[i+1:k] = range(ticker[i]+1,ticker[i] + k - i)
-            ticker[k-1] = ticker[k-1] -1
+            ticker[i+1:dim] = range(ticker[i]+1,ticker[i] + dim - i)
+            ticker[dim-1] = ticker[dim-1] -1
+
+        ticker[dim-1] = ticker[dim-1] +1
+
+    
+def is_base_simplex(ticker,all_points):
+    points = [0,]*len(ticker)
+    for i in range(len(ticker)):
+        points[i] = all_points[ticker[i]]
+
+    point_matrix = np.array(points)
+
+    column_vectors = []
+    for j in range(len(points)):
+        column_vectors.append(point_matrix[:,j])
+
+    indices = []
+
+    for column_permutation in list(itr.permutations(column_vectors)):
+        key = tuple(map(tuple,sorted(tuple(map(tuple,np.column_stack(\
+        column_permutation))))))
+        
+        purmutation_index = [0,]*len(key)
+        for i in range(len(key)):
+            purmutation_index[i] = all_points.index(key[i])
+        indices.append(purmutation_index)
+
+    return indices[0] == min(indices)
+    
 
 
-        ticker[k-1] = ticker[k-1] +1

@@ -347,10 +347,20 @@ def create_dimension_table_2(dim,size):
     size, and orbits.'''
     name = "DB_dimension_%s_%s.db" % (dim,size)
     
-    all_points = list(itr.product(range(0,size+1,2),repeat = dim))
-    all_points.remove(tuple([0]*dim))    
+    standard_points = []
+    for i in range(1,dim+1):
+        point = [0,]*dim
+        point[i-1] = size/2
+        standard_points.append(point)
+    standard_points.append([0,]*dim)
+    all_points = numpy.array(LatticePolytope_PPL(standard_points).integral_points()).tolist()
+    for i in range(len(all_points)):
+        for j in range(len(all_points[0])):
+            all_points[i][j] = (all_points[i][j] * 2)
 
-    power_set_2(all_points, dim)
+    all_points.remove([0]*dim)    
+    print(all_points)
+    #power_set_2(all_points, dim)
     
     
 def power_set_2(all_points,dim):
@@ -387,9 +397,15 @@ def is_base_simplex(ticker,all_points):
     for j in range(len(points)):
         column_vectors.append(point_matrix[:,j])
 
+    
     indices = []
+    
+    column_permutations = list(itr.permutations(column_vectors))
+    #orbits = factorial(len(column_permutations))/factorial(len(tuple(map(tuple,sorted(tuple(map(tuple,np.column_stack(column_vectors))))))))
 
-    for column_permutation in list(itr.permutations(column_vectors)):
+    
+    
+    for column_permutation in column_permutations:
         key = tuple(map(tuple,sorted(tuple(map(tuple,np.column_stack(\
         column_permutation))))))
         

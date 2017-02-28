@@ -346,7 +346,7 @@ def create_dimension_table_2(dim,size):
     each unique Mediated Set and its maximal set, maximal set size, minimal set
     size, and orbits.'''
     name = "DB_dimension_%s_%s.db" % (dim,size)
-    
+    create_db(name)
     standard_points = []
     for i in range(1,dim+1):
         point = [0,]*dim
@@ -359,17 +359,23 @@ def create_dimension_table_2(dim,size):
             all_points[i][j] = (all_points[i][j] * 2)
 
     all_points.remove([0]*dim)    
-    print(all_points)
-    #power_set_2(all_points, dim)
+
+    power_set_2(all_points, dim)
     
     
 def power_set_2(all_points,dim):
     ticker = range(0,dim)
+    name = "DB_dimension_%s_%s.db" % (dim,size)
     
     while true:
+        #this is where MMSet will be calculated 
         if is_base_simplex(ticker,all_points):
-            print(ticker,all_points)
-        
+            points = index_to_points(ticker,all_points)
+            M = MaxMediatedSet([[0,]*4,] + points)
+            MMSet = M.compute_maxmediatedset()
+            add_mmset(name,str([[0,]*dim,] + points),str(MMSet),len(M.lattice),\
+            len(MMSet),M.minimal_set_size(),max(map(sum, points)),0)
+            
         if ticker[dim-1] == len(all_points) -1:
             
             for i in range(dim-2,-1,-1):
@@ -392,11 +398,10 @@ def is_base_simplex(ticker,all_points):
         points[i] = all_points[ticker[i]]
 
     point_matrix = np.array(points)
-
+  
     column_vectors = []
     for j in range(len(points)):
         column_vectors.append(point_matrix[:,j])
-
     
     indices = []
     
@@ -406,15 +411,20 @@ def is_base_simplex(ticker,all_points):
     
     
     for column_permutation in column_permutations:
-        key = tuple(map(tuple,sorted(tuple(map(tuple,np.column_stack(\
-        column_permutation))))))
-        
+
+        key = np.column_stack(column_permutation)
         purmutation_index = [0,]*len(key)
         for i in range(len(key)):
-            purmutation_index[i] = all_points.index(key[i])
+            purmutation_index[i] = all_points.index(key[i].tolist())
         indices.append(purmutation_index)
 
     return indices[0] == min(indices)
     
+
+def index_to_points(ticker,all_points):
+    points = [0,]*len(ticker)
+    for i in range(len(ticker)):
+        points[i] = all_points[ticker[i]]    
+    return points
 
 

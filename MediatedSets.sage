@@ -29,6 +29,8 @@ class MaxMediatedSet:
         """Construct a Mediated Set object."""
         if self._input_check(input_points):
             self._define(input_points)
+
+            
             
             
     def _input_check(self,input_points):
@@ -265,41 +267,11 @@ class MaxMediatedSet:
     
     def orbits(self):
         return
-    
-            
-    
-def power_set(n,size):
-    '''Creates the power set of all possible simplicies in dimension 
-    n up to a given size in any direction along with the number of repeats for 
-    each unique set of points.'''
-    all_matricies = []
-    my_dict = {}
-    
-    all_points = list(itr.product(range(0,size+1,2),repeat = n))
-    all_points.remove(tuple([0]*n))
-    all_sets = (list(itr.combinations(all_points,n)))
-
-    for i in range(0,len(all_sets)):
-        all_matricies.append(np.array(all_sets[i]))
-        my_dict[all_sets[i]] = [false, 0]
-
-    for i in range(len(all_matricies)):
-        if not my_dict[tuple(map(tuple, all_matricies[i]))][0]:
-            column_vectors = []
-            for j in range(len(all_matricies[i][0])):
-                column_vectors.append(all_matricies[i][:,j])
-            for column_permutation in list(itr.permutations(column_vectors)):
-                key = tuple(map(tuple,sorted(tuple(map(tuple,np.column_stack(\
-                column_permutation))))))
+                   
                 
-                my_dict[key][0] = true
-                my_dict[key][1] = my_dict[key][1] + 1
-    return my_dict
-                
-                
-def create_db(Name):
+def create_db(name):
     '''Creates a database table with a given name for the MMSet type'''
-    conn = sqlite3.connect(Name)
+    conn = sqlite3.connect(name)
     c = conn.cursor()
     c.execute('''CREATE TABLE MMSet (Vertices TEXT, MMSet TEXT, 'Max Set Size' 
     INTEGER, 'MMSet size' INTEGER, 'Min Set Size' INTEGER, Difference INTEGER, 
@@ -308,44 +280,22 @@ def create_db(Name):
     conn.close()
 
     
-def add_mmset(Name,Vertices,MMSet,Max,SetSize,Min,Degree,Orbits):
+def add_mmset(name,Vertices,MMSet,Max,SetSize,Min,Degree,Orbits):
     '''Adds element to the MMSet database table'''
-    conn = sqlite3.connect(Name)
+    conn = sqlite3.connect(name)
     c = conn.cursor()
     addSet = (str(Vertices),str(MMSet),int(Max),int(SetSize),int(Min),\
         int(Max-SetSize),int(Degree),int(Orbits))
     c.execute("INSERT INTO MMSet VALUES (?,?,?,?,?,?,?,?)", addSet)
-    conn.commit()
-
-        
-def create_dimension_table(dim,size):
+    conn.commit()  
+    
+    
+def create_dimension_table(dim,size):    
     '''Creates a database table for a given dimension up to a certain size. 
     Generates power set and removes all rotations and counts orbits. Lists 
     each unique Mediated Set and its maximal set, maximal set size, minimal set
     size, and orbits.'''
-    name = "DB_dimension_%s.db" % (dim)
-
-    start_time = time.time()   
-    my_dict = power_set(dim,size)
-    print("Power Set  -  %s seconds" % (time.time() - start_time))
-    
-    start_time = time.time() 
-    create_db(name)
-    for key in my_dict:
-        M = MaxMediatedSet(((0,)*dim,) + key)
-        MMSet = M.compute_maxmediatedset()
-        add_mmset(name,str(((0,)*dim,) + key),str(MMSet),len(M.lattice),\
-        len(MMSet),M.minimal_set_size(),max(map(sum, key)),my_dict[key][1])
-    print("MMSet      -  %s seconds" % (time.time() - start_time))
-    
-    
-    
-def create_dimension_table_2(dim,size):    
-    '''Creates a database table for a given dimension up to a certain size. 
-    Generates power set and removes all rotations and counts orbits. Lists 
-    each unique Mediated Set and its maximal set, maximal set size, minimal set
-    size, and orbits.'''
-    name = "DB_dimension_%s_%s.db" % (dim,size)
+    name = "DB_dimension_%s_size_%s.db" % (dim,size)
     create_db(name)
     standard_points = []
     for i in range(1,dim+1):
@@ -353,29 +303,33 @@ def create_dimension_table_2(dim,size):
         point[i-1] = size/2
         standard_points.append(point)
     standard_points.append([0,]*dim)
-    all_points = numpy.array(LatticePolytope_PPL(standard_points).integral_points()).tolist()
+    all_points = np.array(LatticePolytope_PPL(standard_points).integral_points()).tolist()
     for i in range(len(all_points)):
         for j in range(len(all_points[0])):
             all_points[i][j] = (all_points[i][j] * 2)
 
     all_points.remove([0]*dim)    
 
-    power_set_2(all_points, dim)
+    power_set(all_points, dim, size,name)
     
     
-def power_set_2(all_points,dim):
+def power_set(all_points,dim,size,name):
+    '''Creates the power set of all possible simplicies in dimension 
+    n up to a given size in any direction along with the number of repeats for 
+    each unique set of points.'''
     ticker = range(0,dim)
-    name = "DB_dimension_%s_%s.db" % (dim,size)
-    
+    n = 1
+    conn = sqlite3.connect(name)
+    c = conn.cursor()
     while true:
-        #this is where MMSet will be calculated 
+        #if n % 1000 == 0:
+            #print '%i Mediated Sets Calculated' %n
+        #n = n + 1
         if is_base_simplex(ticker,all_points):
-            points = index_to_points(ticker,all_points)
-            M = MaxMediatedSet([[0,]*4,] + points)
+            points = index_to_points(ticker,all_points)     
+            M = MaxMediatedSet([[0,]*dim,] + points)
             MMSet = M.compute_maxmediatedset()
-            add_mmset(name,str([[0,]*dim,] + points),str(MMSet),len(M.lattice),\
-            len(MMSet),M.minimal_set_size(),max(map(sum, points)),0)
-            
+            add_mmset(name,str([[0,]*dim,] + points),str(MMSet),len(M.lattice),len(MMSet),M.minimal_set_size(),max(map(sum, points)),0) 
         if ticker[dim-1] == len(all_points) -1:
             
             for i in range(dim-2,-1,-1):
@@ -393,6 +347,7 @@ def power_set_2(all_points,dim):
 
     
 def is_base_simplex(ticker,all_points):
+    '''Checks if the given simlex is the base simplex out of all possible permutations about lines of symmetry'''
     points = [0,]*len(ticker)
     for i in range(len(ticker)):
         points[i] = all_points[ticker[i]]
@@ -422,6 +377,7 @@ def is_base_simplex(ticker,all_points):
     
 
 def index_to_points(ticker,all_points):
+    '''Converts the list of indices back to a list of points'''
     points = [0,]*len(ticker)
     for i in range(len(ticker)):
         points[i] = all_points[ticker[i]]    

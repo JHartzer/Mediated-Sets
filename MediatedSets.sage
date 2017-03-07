@@ -207,8 +207,8 @@ class MaxMediatedSet:
 
         .. NOTE::
 
-            Orange points are the original lattice, and red points are all 
-            those remaining in the set.
+            green points are the original lattice that were removed, and red 
+            points are all those remaining in the set.
 
 
         """
@@ -216,12 +216,12 @@ class MaxMediatedSet:
             self.compute_maxmediatedset()
         if len(self.vertices[0]) == 2:
             show(sage.plot.polygon.polygon(self.vertices,fill = false)\
-            +point(self.lattice, color = 'orange', size = 40)\
+            +point(self.lattice, color = 'green', size = 40)\
             +point(self.remaining_points, color = 'red', size = 40)\
             +point(self.vertices, color = 'red', size = 40))
         elif len(self.vertices[0]) == 3:
             show(Polyhedron(self.vertices).plot(fill=false)
-            +point(self.lattice, color = 'orange', size = 20)\
+            +point(self.lattice, color = 'green', size = 20)\
             +point(self.remaining_points, color = 'red', size = 20)\
             +point(self.vertices, color = 'red', size = 20))
         else:
@@ -271,21 +271,32 @@ class MaxMediatedSet:
                 
 def create_db(name):
     '''Creates a database table with a given name for the MMSet type'''
-    conn = sqlite3.connect(name)
+    conn = open_db(name)
     c = conn.cursor()
     c.execute('''CREATE TABLE MMSet (Vertices TEXT, MMSet TEXT, 'Max Set Size' 
-    INTEGER, 'MMSet size' INTEGER, 'Min Set Size' INTEGER, Difference INTEGER, 
+    INTEGER, 'MMSet size' INTEGER, 'Min Set Size' INTEGER, Percent INTEGER, 
     Degree INTEGER, Orbits INTEGER)''')
     conn.commit()
-    conn.close()
+    close_db(conn)
 
-    
-def add_mmset(name,Vertices,MMSet,Max,SetSize,Min,Degree,Orbits):
-    '''Adds element to the MMSet database table'''
+
+def open_db(name):
     conn = sqlite3.connect(name)
+    return conn
+    
+
+def close_db(conn):
+    conn.close()
+    
+def add_mmset(conn,name,Vertices,MMSet,Max,SetSize,Min,Degree,Orbits):
+    '''Adds element to the MMSet database table'''
     c = conn.cursor()
+    if Max == Min:
+        percent = 100
+    else:
+        percent = (SetSize-Min)/(Max-Min)*100
     addSet = (str(Vertices),str(MMSet),int(Max),int(SetSize),int(Min),\
-        int(Max-SetSize),int(Degree),int(Orbits))
+        int(percent),int(Degree),int(Orbits))
     c.execute("INSERT INTO MMSet VALUES (?,?,?,?,?,?,?,?)", addSet)
     conn.commit()  
     
@@ -297,6 +308,9 @@ def create_dimension_table(dim,size):
     size, and orbits.'''
     name = "DB_dimension_%s_size_%s.db" % (dim,size)
     create_db(name)
+    conn = open_db(name)
+     
+    
     standard_points = []
     for i in range(1,dim+1):
         point = [0,]*dim
@@ -310,26 +324,36 @@ def create_dimension_table(dim,size):
 
     all_points.remove([0]*dim)    
 
-    power_set(all_points, dim, size,name)
+    power_set(conn,all_points, dim, size,name)
     
     
-def power_set(all_points,dim,size,name):
+def power_set(conn,all_points,dim,size,name):
     '''Creates the power set of all possible simplicies in dimension 
     n up to a given size in any direction along with the number of repeats for 
     each unique set of points.'''
     ticker = range(0,dim)
-    n = 1
-    conn = sqlite3.connect(name)
-    c = conn.cursor()
+    #n = 1
     while true:
         #if n % 1000 == 0:
             #print '%i Mediated Sets Calculated' %n
         #n = n + 1
-        if is_base_simplex(ticker,all_points):
-            points = index_to_points(ticker,all_points)     
+        base_simplex = is_base_simplex(ticker,all_points)
+        
+        points = index_to_points(list(set(base_simplex)),all_points) 
+        points.sort()
+        entry = str([[0,]*dim,] + points)
+        c = conn.cursor()
+        c.execute('SELECT Orbits FROM MMSet WHERE Vertices =?', (entry,))
+        new_orbit = c.fetchone()
+    
+        if new_orbit is None:
             M = MaxMediatedSet([[0,]*dim,] + points)
             MMSet = M.compute_maxmediatedset()
-            add_mmset(name,str([[0,]*dim,] + points),str(MMSet),len(M.lattice),len(MMSet),M.minimal_set_size(),max(map(sum, points)),0) 
+            add_mmset(conn,name,str([[0,]*dim,] + points),str(MMSet),len(M.lattice),len(MMSet),M.minimal_set_size(),max(map(sum, points)),1) 
+        else:            
+            new_orbit = int(new_orbit[0] + 1)
+            c.execute('UPDATE MMSet SET Orbits = ? WHERE Vertices=?',(new_orbit,entry))
+            conn.commit()              
         if ticker[dim-1] == len(all_points) -1:
             
             for i in range(dim-2,-1,-1):
@@ -372,8 +396,7 @@ def is_base_simplex(ticker,all_points):
         for i in range(len(key)):
             purmutation_index[i] = all_points.index(key[i].tolist())
         indices.append(purmutation_index)
-
-    return indices[0] == min(indices)
+    return min(indices)
     
 
 def index_to_points(ticker,all_points):

@@ -309,7 +309,6 @@ def create_dimension_table(dim,size):
     name = "DB_dimension_%s_size_%s.db" % (dim,size)
     create_db(name)
     conn = open_db(name)
-     
     
     standard_points = []
     for i in range(1,dim+1):
@@ -340,20 +339,22 @@ def power_set(conn,all_points,dim,size,name):
         base_simplex = is_base_simplex(ticker,all_points)
         
         points = index_to_points(list(set(base_simplex)),all_points) 
-        points.sort()
-        entry = str([[0,]*dim,] + points)
-        c = conn.cursor()
-        c.execute('SELECT Orbits FROM MMSet WHERE Vertices =?', (entry,))
-        new_orbit = c.fetchone()
-    
-        if new_orbit is None:
-            M = MaxMediatedSet([[0,]*dim,] + points)
-            MMSet = M.compute_maxmediatedset()
-            add_mmset(conn,name,str([[0,]*dim,] + points),str(MMSet),len(M.lattice),len(MMSet),M.minimal_set_size(),max(map(sum, points)),1) 
-        else:            
-            new_orbit = int(new_orbit[0] + 1)
-            c.execute('UPDATE MMSet SET Orbits = ? WHERE Vertices=?',(new_orbit,entry))
-            conn.commit()              
+        if check_linearity(points):
+            points.sort()
+            entry = str([[0,]*dim,] + points)
+            c = conn.cursor()
+            c.execute('SELECT Orbits FROM MMSet WHERE Vertices =?', (entry,))
+            new_orbit = c.fetchone()
+        
+            if new_orbit is None:
+                M = MaxMediatedSet([[0,]*dim,] + points)
+                MMSet = M.compute_maxmediatedset()
+                add_mmset(conn,name,str([[0,]*dim,] + points),str(MMSet),len(M.lattice),len(MMSet),M.minimal_set_size(),max(map(sum, points)),1) 
+                
+            else:            
+                new_orbit = int(new_orbit[0] + 1)
+                c.execute('UPDATE MMSet SET Orbits = ? WHERE Vertices=?',(new_orbit,entry))
+                conn.commit()
         if ticker[dim-1] == len(all_points) -1:
             
             for i in range(dim-2,-1,-1):
@@ -406,4 +407,9 @@ def index_to_points(ticker,all_points):
         points[i] = all_points[ticker[i]]    
     return points
 
-
+def check_linearity(points):
+    for i in range(len(points)-1):
+        for j in range(i+1,len(points)):
+            if numpy.all(numpy.cross(points[i],points[j])==0):
+                return false
+    return true 

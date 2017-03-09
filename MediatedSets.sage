@@ -12,6 +12,7 @@ from sage.geometry.polyhedron.ppl_lattice_polytope import LatticePolytope_PPL
 
 # Used to convert the polytope lattice type to a list type
 import numpy as np
+from numpy.linalg import matrix_rank
 
 # For permutations
 import itertools as itr
@@ -339,7 +340,7 @@ def power_set(conn,all_points,dim,size,name):
         base_simplex = is_base_simplex(ticker,all_points)
         
         points = index_to_points(list(set(base_simplex)),all_points) 
-        if check_linearity(points):
+        if matrix_rank(points) == dim:
             points.sort()
             entry = str([[0,]*dim,] + points)
             c = conn.cursor()

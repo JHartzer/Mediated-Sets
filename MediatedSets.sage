@@ -307,6 +307,7 @@ def create_dimension_table(dim,size):
     Generates power set and removes all rotations and counts orbits. Lists 
     each unique Mediated Set and its maximal set, maximal set size, minimal set
     size, and orbits.'''
+    t0 = time.time()
     name = "DB_dimension_%s_size_%s.db" % (dim,size)
     create_db(name)
     conn = open_db(name)
@@ -325,6 +326,13 @@ def create_dimension_table(dim,size):
     all_points.remove([0]*dim)    
 
     power_set(conn,all_points, dim, size,name)
+    c = conn.cursor()
+    c.execute('SELECT Sum(Orbits) FROM MMSet')
+    num_sets = c.fetchone()
+    t1 = time.time()
+    total_time = t1-t0
+    print num_sets[0], 'MMSets analyzed in', total_time, 'seconds'
+    close_db(conn)
     
     
 def power_set(conn,all_points,dim,size,name):
@@ -332,18 +340,19 @@ def power_set(conn,all_points,dim,size,name):
     n up to a given size in any direction along with the number of repeats for 
     each unique set of points.'''
     ticker = range(0,dim)
-    #n = 1
+    n = 1
+    c = conn.cursor()
     while true:
-        #if n % 1000 == 0:
-            #print '%i Mediated Sets Calculated' %n
-        #n = n + 1
+        if n % 1000 == 0:
+            print '%i Sets Checked' %n
+        n = n + 1
         base_simplex = is_base_simplex(ticker,all_points)
         
         points = index_to_points(list(set(base_simplex)),all_points) 
         if matrix_rank(points) == dim:
             points.sort()
             entry = str([[0,]*dim,] + points)
-            c = conn.cursor()
+            
             c.execute('SELECT Orbits FROM MMSet WHERE Vertices =?', (entry,))
             new_orbit = c.fetchone()
         

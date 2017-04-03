@@ -1,5 +1,10 @@
 # Mediated-Sets
-This is a work in progress by Jacob Hartzer and Timo de Wolff from the Texas A&M Department of Mathematics
+This is a work in progress by Jacob Hartzer and Timo de Wolff from the Texas A&M Department of Mathematics.
+
+Version history:
+
+- Version 0.1.0.0(a); 10/01/2016: Initial version featuring the class "MaxMediatedSet", which allows the computation of maximal mediated sets and plotting these objects in dimension 2 and 3.
+- Version 0.1.0.1(a); 04/03/2017: Code cleaned up; procedures and functions documented according to SAGE standard.
 
 Usage
 

@@ -1,7 +1,7 @@
 # Class: MaxMediatedSet
 #
 # Author: Jacob Hartzer, Timo de wolff
-# Last Edited: 14 - February - 2016
+# Last Edited: 3 - August - 2017
 #
 # Class written for the analysis of maximal mediated sets
 #
@@ -217,9 +217,9 @@ class MaxMediatedSet:
             self.compute_maxmediatedset()
         if len(self.vertices[0]) == 2:
             show(sage.plot.polygon.polygon(self.vertices,fill = false)\
-            +point(self.lattice, color = 'green', size = 40)\
-            +point(self.remaining_points, color = 'red', size = 40)\
-            +point(self.vertices, color = 'red', size = 40))
+            +point(self.lattice, color = 'green', size = 150)\
+            +point(self.remaining_points, color = 'green', size = 150)\
+            +point(self.vertices, color = 'red', size = 150))
         elif len(self.vertices[0]) == 3:
             show(Polyhedron(self.vertices).plot(fill=false)
             +point(self.lattice, color = 'green', size = 20)\
@@ -265,10 +265,22 @@ class MaxMediatedSet:
         return len(self.vertices)\
         +((len(self.vertices) - 1)*len(self.vertices)) / 2
     
-    
-    def orbits(self):
-        return
-                   
+    def num_orbits(self):
+        point_matrix = np.array(self.vertices)
+  
+        point_matrix
+        column_vectors = []
+        for j in range(len(self.vertices[0])):
+            column_vectors.append(point_matrix[:,j])
+        
+        orbits = []
+        column_permutations = list(itr.permutations(column_vectors))
+        
+        for column_permutation in column_permutations:
+            orbits.append(np.column_stack(column_permutation))
+            print column_permutation
+        
+        print (orbits)
                 
 def create_db(name):
     '''Creates a database table with a given name for the MMSet type'''
@@ -349,6 +361,7 @@ def power_set(conn,all_points,dim,size,name):
         base_simplex = is_base_simplex(ticker,all_points)
         
         points = index_to_points(list(set(base_simplex)),all_points) 
+
         if matrix_rank(points) == dim:
             points.sort()
             entry = str([[0,]*dim,] + points)
@@ -386,7 +399,6 @@ def is_base_simplex(ticker,all_points):
     points = [0,]*len(ticker)
     for i in range(len(ticker)):
         points[i] = all_points[ticker[i]]
-
     point_matrix = np.array(points)
   
     column_vectors = []
@@ -394,11 +406,7 @@ def is_base_simplex(ticker,all_points):
         column_vectors.append(point_matrix[:,j])
     
     indices = []
-    
     column_permutations = list(itr.permutations(column_vectors))
-    #orbits = factorial(len(column_permutations))/factorial(len(tuple(map(tuple,sorted(tuple(map(tuple,np.column_stack(column_vectors))))))))
-
-    
     
     for column_permutation in column_permutations:
 
@@ -407,7 +415,11 @@ def is_base_simplex(ticker,all_points):
         for i in range(len(key)):
             purmutation_index[i] = all_points.index(key[i].tolist())
         indices.append(purmutation_index)
-    return min(indices)
+    sorted_indices = []
+    for index in indices:
+        index.sort()
+        sorted_indices.append(index)
+    return min(sorted_indices)
     
 
 def index_to_points(ticker,all_points):

@@ -306,7 +306,6 @@ def add_mmset(conn,name,Vertices,MMSet,Max,SetSize,Min,Degree,Orbits):
     c = conn.cursor()
     if Max == Min:
         percent = str('N/A')
-        print 'test'
     else:
         percent = str((SetSize-Min)/(Max-Min)*100)
     addSet = (str(Vertices),str(MMSet),int(Max),int(SetSize),int(Min),\

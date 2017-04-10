@@ -278,9 +278,13 @@ class MaxMediatedSet:
         
         for column_permutation in column_permutations:
             orbits.append(np.column_stack(column_permutation))
-            print column_permutation
-        
-        print (orbits)
+            #print column_permutation
+
+        for i in range(len(orbits)):
+            orbits[i] = orbits[i].tolist()
+            orbits[i].sort()
+            orbits[i] = str(orbits[i])
+        print len(set(orbits))
                 
 def create_db(name):
     '''Creates a database table with a given name for the MMSet type'''

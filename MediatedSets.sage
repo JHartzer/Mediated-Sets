@@ -57,81 +57,81 @@ class MaxMediatedSet:
     
     def compute_maxmediatedset(self):
         r"""
-        Computes the maximal mediated set of the input points. 
+            Computes the maximal mediated set of the input points. 
 
-        INPUT:
+            INPUT:
 
-        - ``input_points`` -- tuple of tuple of equal length. This is a tuple of 
-            the tuples of length (dimension + 1) that define a simplex within
-          the given dimension. 
-        
-        - ``self.lattice`` -- tuple of tuples. A tuple of all the points within
-          or on the face of the defined simplex.
-        
-        - ``self.remaining_points`` -- tuple of tuples. List that is used 
-          recursively to keep track of which points are still within the 
-          maximal mediated set after each iteration.
-        
-        - ``self.vertices`` -- tuple of tuples. List of all the vertices of the
-          simplex. Equal to ''input_points''.
-
-        OUTPUT:
-
-        The maximal mediated set as a list of lists.
-
-        .. SEEALSO::
-
-            :func:`plot`
-            :func:`minimal_set_size`
-
-        ALGORITHM:
-        
-            Timo, I'll need you to put in a reference here so I can better 
-            document it.
+            - ``input_points`` -- tuple of tuple of equal length. This is a tuple of 
+                the tuples of length (dimension + 1) that define a simplex within
+              the given dimension. 
             
-        EXAMPLES:
-
-        This example illustrates the creation and calculation of a Maximal 
-        Mediated Set in the second demension. 
-
-        ::
-
-            sage: M = MaxMediatedSet(((0,0),(2,4),(4,2)))
-            sage: M.compute_maxmediatedset()
-            [[0, 0], [1, 2], [2, 1], [2, 4], [3, 3], [4, 2]]
+            - ``self.lattice`` -- tuple of tuples. A tuple of all the points within
+              or on the face of the defined simplex.
             
+            - ``self.remaining_points`` -- tuple of tuples. List that is used 
+              recursively to keep track of which points are still within the 
+              maximal mediated set after each iteration.
             
-        This example illustrates the creation and calculation of a Maximal 
-        Mediated Set in the third demension. 
-        
-        ::
-        
-            M = MaxMediatedSet(((0,0,0),(0,2,4),(0,4,2),(2,2,4)))
-            M.compute_maxmediatedset()        
-            [[0, 0, 0],
-             [0, 1, 2],
-             [0, 2, 1],
-             [0, 2, 4],
-             [0, 3, 3],
-             [0, 4, 2],
-             [1, 1, 2],
-             [1, 2, 4],
-             [1, 3, 3],
-             [2, 2, 4]]
+            - ``self.vertices`` -- tuple of tuples. List of all the vertices of the
+              simplex. Equal to ''input_points''.
 
-        ...
+            OUTPUT:
 
-        TESTS::
+            The maximal mediated set as a list of lists.
 
-            sage: M = MaxMediatedSet(((0,0),(2,4)))  # Checks for case of\ 
-            underdefined simplex
-                Error: Underdefined simplex
+            .. SEEALSO::
+
+                :func:`plot`
+                :func:`minimal_set_size`
+
+            ALGORITHM:
             
-            sage: M = MaxMediatedSet(((0,0),(0,0),(0,2,4)))  # Checks for case\ 
-            of mismatched point dimensions
-                Error: Input points must be of same dimension
+                Timo, I'll need you to put in a reference here so I can better 
+                document it.
+                
+            EXAMPLES:
+
+            This example illustrates the creation and calculation of a Maximal 
+            Mediated Set in the second demension. 
+
+            ::
+
+                sage: M = MaxMediatedSet(((0,0),(2,4),(4,2)))
+                sage: M.compute_maxmediatedset()
+                [[0, 0], [1, 2], [2, 1], [2, 4], [3, 3], [4, 2]]
+                
+                
+            This example illustrates the creation and calculation of a Maximal 
+            Mediated Set in the third demension. 
             
-        .. automethod:: _keep
+            ::
+            
+                M = MaxMediatedSet(((0,0,0),(0,2,4),(0,4,2),(2,2,4)))
+                M.compute_maxmediatedset()        
+                [[0, 0, 0],
+                 [0, 1, 2],
+                 [0, 2, 1],
+                 [0, 2, 4],
+                 [0, 3, 3],
+                 [0, 4, 2],
+                 [1, 1, 2],
+                 [1, 2, 4],
+                 [1, 3, 3],
+                 [2, 2, 4]]
+
+            ...
+
+            TESTS::
+
+                sage: M = MaxMediatedSet(((0,0),(2,4)))  # Checks for case of\ 
+                underdefined simplex
+                    Error: Underdefined simplex
+                
+                sage: M = MaxMediatedSet(((0,0),(0,0),(0,2,4)))  # Checks for case\ 
+                of mismatched point dimensions
+                    Error: Input points must be of same dimension
+                
+            .. automethod:: _keep
         """
         
         for i in range(len(self.remaining_points)-1,0,-1):
@@ -168,48 +168,48 @@ class MaxMediatedSet:
         
     def plot(self):
         r"""
-        Plots the maximal mediated set
+            Plots the maximal mediated set
 
-        INPUT:
+            INPUT:
 
-        - ``self`` -- 2nd or 3rd dimensional MaxMediatedSet Object. This is the
-          object containing the lists of vertices, remaining_points, and 
-          lattice. If the set has not already been calculated, it will be 
-          before plotting.
+            - ``self`` -- 2nd or 3rd dimensional MaxMediatedSet Object. This is the
+              object containing the lists of vertices, remaining_points, and 
+              lattice. If the set has not already been calculated, it will be 
+              before plotting.
 
-        OUTPUT:
+            OUTPUT:
 
-        2 or 3 dimensional plot of the maximal mediated set, depending on the 
-        dimension of the input points. 
+            2 or 3 dimensional plot of the maximal mediated set, depending on the 
+            dimension of the input points. 
 
-        EXAMPLES:
+            EXAMPLES:
 
-        This example illustrates plotting 2 or 3 dimensional Max Mediated Sets.
+            This example illustrates plotting 2 or 3 dimensional Max Mediated Sets.
 
-        ::
+            ::
 
-            sage: M = MaxMediatedSet(((0,0,0),(0,2,4),(0,4,2),(4,2,2)))
-            sage: M.plot()
-            <3d plot of simplex>
+                sage: M = MaxMediatedSet(((0,0,0),(0,2,4),(0,4,2),(4,2,2)))
+                sage: M.plot()
+                <3d plot of simplex>
 
-        ::
+            ::
 
-            sage: M = MaxMediatedSet(((0,0),(2,4),(4,2)))
-            sage: M.plot()
-            <2d plot of simplex>
-                
-        It is an error to plot a MMSet with dimension other than 2 or 3
+                sage: M = MaxMediatedSet(((0,0),(2,4),(4,2)))
+                sage: M.plot()
+                <2d plot of simplex>
+                    
+            It is an error to plot a MMSet with dimension other than 2 or 3
 
-            sage: M = MaxMediatedSet(((0,0,0,0),(2,4,0,0),(4,2,0,0),(0,2,4,0),\
-            (0,0,4,2)))
-            sage: M.plot()
-            Error: Polytope must have dimension of 2 or 3 to graph
+                sage: M = MaxMediatedSet(((0,0,0,0),(2,4,0,0),(4,2,0,0),(0,2,4,0),\
+                (0,0,4,2)))
+                sage: M.plot()
+                Error: Polytope must have dimension of 2 or 3 to graph
 
 
-        .. NOTE::
+            .. NOTE::
 
-            green points are the original lattice that were removed, and red 
-            points are all those remaining in the set.
+                green points are the original lattice that were removed, and red 
+                points are all those remaining in the set.
 
 
         """
@@ -218,7 +218,7 @@ class MaxMediatedSet:
         if len(self.vertices[0]) == 2:
             show(sage.plot.polygon.polygon(self.vertices,fill = false)\
             +point(self.lattice, color = 'green', size = 150)\
-            +point(self.remaining_points, color = 'green', size = 150)\
+            +point(self.remaining_points, color = 'red', size = 150)\
             +point(self.vertices, color = 'red', size = 150))
         elif len(self.vertices[0]) == 3:
             show(Polyhedron(self.vertices).plot(fill=false)
@@ -231,36 +231,36 @@ class MaxMediatedSet:
                 
     def minimal_set_size(self):
         r"""
-        Return the smallest possible size of the maximal mediated set.
+            Return the smallest possible size of the maximal mediated set.
 
-        INPUT:
+            INPUT:
 
-        - ``self.vertices`` -- tuple of tuples. These are the points that 
-        define the simplex
+            - ``self.vertices`` -- tuple of tuples. These are the points that 
+            define the simplex
 
-        OUTPUT:
+            OUTPUT:
 
-        The integer minimum set size.
+            The integer minimum set size.
 
-        .. SEEALSO::
+            .. SEEALSO::
 
-            :func:`compute_maxmediatedset`
+                :func:`compute_maxmediatedset`
 
-        EXAMPLES:
+            EXAMPLES:
 
-        This example illustrates caclulating the minimum set size
+            This example illustrates caclulating the minimum set size
 
-        ::
+            ::
 
-            sage: M = MaxMediatedSet(((0,0,0),(2,4,0),(4,2,0),(0,2,4)))
-            sage: M.minimal_set_size()
-            10
-        
-        ::
-        
-            sage: M = MaxMediatedSet(((0,0),(2,4),(4,2)))
-            sage: M.minimal_set_size()
-            6 
+                sage: M = MaxMediatedSet(((0,0,0),(2,4,0),(4,2,0),(0,2,4)))
+                sage: M.minimal_set_size()
+                10
+            
+            ::
+            
+                sage: M = MaxMediatedSet(((0,0),(2,4),(4,2)))
+                sage: M.minimal_set_size()
+                6 
         """
         return len(self.vertices)\
         +((len(self.vertices) - 1)*len(self.vertices)) / 2
@@ -287,7 +287,7 @@ def create_db(name):
     conn = open_db(name)
     c = conn.cursor()
     c.execute('''CREATE TABLE MMSet (Vertices TEXT, MMSet TEXT, 'Max Set Size' 
-    INTEGER, 'MMSet size' INTEGER, 'Min Set Size' INTEGER, Percent INTEGER, 
+    INTEGER, 'MMSet size' INTEGER, 'Min Set Size' INTEGER, Percent TEXT, 
     Degree INTEGER, Orbits INTEGER)''')
     conn.commit()
     close_db(conn)
@@ -305,11 +305,12 @@ def add_mmset(conn,name,Vertices,MMSet,Max,SetSize,Min,Degree,Orbits):
     '''Adds element to the MMSet database table'''
     c = conn.cursor()
     if Max == Min:
-        percent = 100
+        percent = str('N/A')
+        print 'test'
     else:
-        percent = (SetSize-Min)/(Max-Min)*100
+        percent = str((SetSize-Min)/(Max-Min)*100)
     addSet = (str(Vertices),str(MMSet),int(Max),int(SetSize),int(Min),\
-        int(percent),int(Degree),int(Orbits))
+        str(percent),int(Degree),int(Orbits))
     c.execute("INSERT INTO MMSet VALUES (?,?,?,?,?,?,?,?)", addSet)
     conn.commit()  
     

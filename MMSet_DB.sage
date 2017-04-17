@@ -6,27 +6,50 @@
 # Class written for the analysis of maximal mediated set databases 
 #
 ###############################################################################
-   
+import os
+
+base_path = "/media/sf_GIT/Mediated-Sets/DB/"
 
 class MMSet_DB:
     '''Class for creating maximal mediated sets databases'''
 
 
-    def __init__(self, dim, degree):
+    def __init__(self):
         """Construct a Mediated Set database object."""
+        
+        
+    def load_data_table(self,filename):
+        if not os.path.isfile(os.path.join(base_path, filename)):
+            return 'Error: File does not exist'
+        else:
+            self.path = os.path.join(base_path, filename)
+            self.open_db()
+            self.conn.commit()
+            self.close_db()
+            self.database_computed = true
+
+    
+    def create_new_table(self, dim, degree):
         self.dim = dim
         self.degree = degree
-        self.name = "DB_dimension_%s_degree_%s.db" % (dim,degree)
-        self.open_db()
-        c = self.conn.cursor()
-        c.execute('''CREATE TABLE MMSet (Vertices TEXT, MMSet TEXT, 'Max Set Size' INTEGER, 'MMSet size' INTEGER, 'Min Set Size' INTEGER, Percent TEXT, Degree INTEGER, Orbits INTEGER)''')
-        self.conn.commit()
+        filename = "DB_dimension_%s_degree_%s.db" % (dim,degree)
+        self.path = os.path.join(base_path, filename)
+        if not os.path.isfile(os.path.join(base_path, filename)): 
+            self.open_db()
+            c = self.conn.cursor()
+            c.execute('''CREATE TABLE MMSet (Vertices TEXT, MMSet TEXT, 'Max Set Size' INTEGER, 'MMSet size' INTEGER, 'Min Set Size' INTEGER, Percent TEXT, Degree INTEGER, Orbits INTEGER)''')
+            self.conn.commit()
+            self.database_computed = false
+        else:
+            print 'Table already exists'
+            self.load_data_table(filename)
+            print 'Existing table loaded'
         self.close_db()
-        self.database_computed = false
+        
 
 
     def open_db(self):
-        self.conn = sqlite3.connect(self.name)
+        self.conn = sqlite3.connect(self.path)
 
         
     def close_db(self):
@@ -46,36 +69,44 @@ class MMSet_DB:
         self.conn.commit()  
         
         
-    def create_dimension_table(self):    
+    def compute_dimension_table(self):    
         '''Creates a database table for a given dimension up to a certain degree. 
         Generates power set and removes all rotations and counts orbits. Lists 
         each unique Mediated Set and its maximal set, maximal set size, minimal set
         size, and orbits.'''
-        t0 = time.time()
-        self.open_db()
-        
-        standard_points = []
-        for i in range(1,self.dim+1):
-            point = [0,]*self.dim
-            point[i-1] = self.degree/2
-            standard_points.append(point)
-        standard_points.append([0,]*self.dim)
-        all_points = np.array(LatticePolytope_PPL(standard_points).integral_points()).tolist()
-        for i in range(len(all_points)):
-            for j in range(len(all_points[0])):
-                all_points[i][j] = (all_points[i][j] * 2)
+        if self.database_computed == false:
+            files = os.listdir(base_path)
+            for file in files:
+                dim_index = file.find('dimension_')
+                deg_index = file.find('degree_')
+                if self.dim == int(file[dim_index+10:deg_index-1]) and self.degree < int(file[deg_index+7:len(file)-3]):
+                    print 'Warning: Table of equal or higher degree already exists.'
+                    return
+            
+            t_start = time.time()
+            self.open_db()
+            
+            standard_points = []
+            for i in range(1,self.dim+1):
+                point = [0,]*self.dim
+                point[i-1] = self.degree/2
+                standard_points.append(point)
+            standard_points.append([0,]*self.dim)
+            all_points = np.array(LatticePolytope_PPL(standard_points).integral_points()).tolist()
+            for i in range(len(all_points)):
+                for j in range(len(all_points[0])):
+                    all_points[i][j] = (all_points[i][j] * 2)
 
-        all_points.remove([0]*self.dim)    
+            all_points.remove([0]*self.dim)    
 
-        self._power_set(all_points)
-        c = self.conn.cursor()
-        c.execute('SELECT Sum(Orbits) FROM MMSet')
-        num_sets = c.fetchone()
-        t1 = time.time()
-        total_time = t1-t0
-        print num_sets[0], 'MMSets analyzed in', total_time, 'seconds'
-        self.close_db()
-        self.database_computed = true
+            self._power_set(all_points)
+            c = self.conn.cursor()
+            c.execute('SELECT Sum(Orbits) FROM MMSet')
+            num_sets = c.fetchone()
+            total_time = time.time()-t_start
+            print num_sets[0], 'MMSets analyzed in', total_time, 'seconds'
+            self.close_db()
+            self.database_computed = true
         
     def _power_set(self,all_points):
         '''Creates the power set of all possible simplicies in dimension 
@@ -84,9 +115,12 @@ class MMSet_DB:
         ticker = range(0,self.dim)
         n = 1
         c = self.conn.cursor()
+        t0 = time.time()
         while true:
-            if n % 1000 == 0:
-                print '%i Point Sets Checked' %n
+            if n % 100 == 0:
+                if time.time()-t0 > 30:
+                    print '%i Point Sets Checked' %n
+                    t0 = t0+30
             n = n + 1
             base_simplex = self._find_base_simplex(ticker,all_points)
             points = self._index_to_points(list(set(base_simplex)),all_points) 
@@ -160,8 +194,7 @@ class MMSet_DB:
         
         
     def percent_fractional_set(self):
-        if self.database_computed == false:
-            self.compute_maxmediatedset()
+        self.compute_maxmediatedset()
         self.open_db()
         c = self.conn.cursor()
         entry = str('N/A')
@@ -173,8 +206,9 @@ class MMSet_DB:
         
         elements = list(set(percents))
         elements.sort()
-        elements.append(elements[1])
-        elements.remove(elements[1])
+        if len(elements) >= 2:
+            elements.append(elements[1])
+            elements.remove(elements[1])
         count = []
         for i in range(len(elements)):
             count.append(percents.count(elements[i]))
@@ -183,6 +217,50 @@ class MMSet_DB:
         return percents
         
     
+    def percent_non_sos(self):
+        self.compute_maxmediatedset()
+        self.open_db()
+        c = self.conn.cursor()
+        entry = str('N/A')
+        c.execute('SELECT `MMSet Size`,`Max Set Size`,Orbits FROM MMSet WHERE Percent !=?',(entry,))
+        set_sizes = c.fetchall()
+        self.close_db()
+        sum_max = 0
+        sum_mms = 0
+        for i in range(len(set_sizes)):
+            sum_mms = sum_mms + set_sizes[i][0] * set_sizes[i][2]
+            sum_max = sum_max + set_sizes[i][1] * set_sizes[i][2]
+        return float(sum_mms*100)/sum_max
+        
+        
+    def delete_table(self):
+        self.close_db()
+        os.remove(self.path)
+        
+        
+def percent_non_sos_vs_degree(dim, max_degree):
+    return 'needs work'
+    
+    bars = []
+    
+    
+        db = MMSet_DB()
+        db.create_new_table(dim,i)
+        db.compute_dimension_table()
+        bars.append(db.percent_non_sos())
 
-        
-        
+    for i in range(4,max_degree+1,2):
+    
+    print bars
+    return bar_chart(bars)
+    
+    
+def percent_non_sos_vs_dim(max_dim,degree):
+    bars = []
+    for i in range(2,max_dim+1):
+        db = MMSet_DB()
+        db.create_new_table(i,degree)
+        db.compute_dimension_table()
+        bars.append(db.percent_non_sos())
+    print bars
+    return bar_chart(bars)

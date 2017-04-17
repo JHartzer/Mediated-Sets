@@ -193,17 +193,20 @@ class MMSet_DB:
         return points
         
         
-    def percent_fractional_set(self):
-        self.compute_maxmediatedset()
+    def percent_fractional_set(self,max_degree):
+        self.compute_dimension_table()
         self.open_db()
         c = self.conn.cursor()
         entry = str('N/A')
-        c.execute('SELECT Percent FROM MMSet WHERE Percent !=?',(entry,))
+        c.execute('SELECT Percent,Degree FROM MMSet WHERE Percent !=?',(entry,))
         percents = c.fetchall()
         self.close_db()
+        elements = []
+        for i in range(len(percents)-1,0,-1):
+            if percents[i][1] > max_degree:
+                percents.remove(percents[i])     
         print len(percents),'Possibly Fractional Base Sets'
         print ' '
-        
         elements = list(set(percents))
         elements.sort()
         if len(elements) >= 2:
@@ -214,22 +217,22 @@ class MMSet_DB:
             count.append(percents.count(elements[i]))
             print elements[i][0], count[i]
         print ' '
-        return percents
         
     
-    def percent_non_sos(self):
-        self.compute_maxmediatedset()
+    def percent_non_sos(self,max_degree):
+        self.compute_dimension_table()
         self.open_db()
         c = self.conn.cursor()
         entry = str('N/A')
-        c.execute('SELECT `MMSet Size`,`Max Set Size`,Orbits FROM MMSet WHERE Percent !=?',(entry,))
+        c.execute('SELECT `MMSet Size`,`Max Set Size`,Orbits,Degree FROM MMSet WHERE Percent !=?',(entry,))
         set_sizes = c.fetchall()
         self.close_db()
         sum_max = 0
         sum_mms = 0
         for i in range(len(set_sizes)):
-            sum_mms = sum_mms + set_sizes[i][0] * set_sizes[i][2]
-            sum_max = sum_max + set_sizes[i][1] * set_sizes[i][2]
+            if set_sizes[i][3] <= max_degree:
+                sum_mms = sum_mms + set_sizes[i][0] * set_sizes[i][2]
+                sum_max = sum_max + set_sizes[i][1] * set_sizes[i][2]
         return float(sum_mms*100)/sum_max
         
         
@@ -239,18 +242,12 @@ class MMSet_DB:
         
         
 def percent_non_sos_vs_degree(dim, max_degree):
-    return 'needs work'
-    
     bars = []
-    
-    
-        db = MMSet_DB()
-        db.create_new_table(dim,i)
-        db.compute_dimension_table()
-        bars.append(db.percent_non_sos())
-
+    db = MMSet_DB()
+    db.create_new_table(dim,max_degree)
+    db.compute_dimension_table()
     for i in range(4,max_degree+1,2):
-    
+        bars.append(db.percent_non_sos(i))
     print bars
     return bar_chart(bars)
     

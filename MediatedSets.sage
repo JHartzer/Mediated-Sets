@@ -285,3 +285,8 @@ class MaxMediatedSet:
             orbits[i].sort()
             orbits[i] = str(orbits[i])
         print len(set(orbits))
+
+        
+    def ehrhart_polynomial(self):
+        P = Polyhedron(vertices = self.vertices)
+        return P.ehrhart_polynomial()

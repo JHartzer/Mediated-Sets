@@ -76,15 +76,30 @@ class MMSet_DB:
         size, and orbits.'''
         if self.database_computed == false:
             files = os.listdir(base_path)
+            min_degree = 0
+            self.open_db()
+            c = self.conn.cursor()
             for file in files:
                 dim_index = file.find('dimension_')
                 deg_index = file.find('degree_')
-                if self.dim == int(file[dim_index+10:deg_index-1]) and self.degree < int(file[deg_index+7:len(file)-3]):
-                    print 'Warning: Table of equal or higher degree already exists.'
-                    return
-            
+                if self.dim == int(file[dim_index+10:deg_index-1]):
+                    file_deg = int(file[deg_index+7:len(file)-3])
+                    if self.degree < file_deg:
+                        print 'Warning: Table of equal or higher degree already exists.'
+                        return
+                    elif self.degree != file_deg and min_degree < file_deg:
+                        min_degree = file_deg
+            if min_degree != 0:
+                filename = "DB_dimension_%s_degree_%s.db" % (self.dim,min_degree)
+                filepath = os.path.join(base_path, filename)
+                dbconn = sqlite3.connect(filepath)
+                c2 = dbconn.cursor()
+                c2.execute('SELECT * FROM MMSet')
+                for set in c2.fetchall():
+                    c.execute("INSERT INTO MMSet VALUES (?,?,?,?,?,?,?,?)", set)
+                
             t_start = time.time()
-            self.open_db()
+            
             
             standard_points = []
             for i in range(1,self.dim+1):
@@ -99,8 +114,8 @@ class MMSet_DB:
 
             all_points.remove([0]*self.dim)    
 
-            self._power_set(all_points)
-            c = self.conn.cursor()
+            self._power_set(all_points,min_degree)
+            
             c.execute('SELECT Sum(Orbits) FROM MMSet')
             num_sets = c.fetchone()
             total_time = time.time()-t_start
@@ -108,7 +123,7 @@ class MMSet_DB:
             self.close_db()
             self.database_computed = true
         
-    def _power_set(self,all_points):
+    def _power_set(self,all_points,min_degree):
         '''Creates the power set of all possible simplicies in dimension 
         n up to a given degree in any direction along with the number of repeats for 
         each unique set of points.'''
@@ -118,42 +133,41 @@ class MMSet_DB:
         t0 = time.time()
         while true:
             if n % 100 == 0:
-                if time.time()-t0 > 30:
+                if time.time()-t0 > 60:
                     print '%i Point Sets Checked' %n
-                    t0 = t0+30
+                    t0 = t0+60
             n = n + 1
             base_simplex = self._find_base_simplex(ticker,all_points)
             points = self._index_to_points(list(set(base_simplex)),all_points) 
             
             if matrix_rank(points) == self.dim:
                 points.sort()
-                entry = str([[0,]*self.dim,] + points)
+                degree = max(map(sum, points))
+                if degree > min_degree:
+                    entry = str([[0,]*self.dim,] + points)
+                    c.execute('SELECT Orbits FROM MMSet WHERE Vertices =?', (entry,))
+                    new_orbit = c.fetchone()
                 
-                c.execute('SELECT Orbits FROM MMSet WHERE Vertices =?', (entry,))
-                new_orbit = c.fetchone()
-            
-                if new_orbit is None:
-                    M = MaxMediatedSet([[0,]*self.dim,] + points)
-                    MMSet = M.compute_maxmediatedset()
-                    self.add_mmset(str([[0,]*self.dim,] + points),str(MMSet),len(M.lattice),len(MMSet),M.minimal_set_size(),max(map(sum, points)),1) 
+                    if new_orbit is None:
+                        M = MaxMediatedSet([[0,]*self.dim,] + points)
+                        MMSet = M.compute_maxmediatedset()
+                        self.add_mmset(str([[0,]*self.dim,] + points),str(MMSet),len(M.lattice),len(MMSet),M.minimal_set_size(),degree,1)
+                        
+                    else:            
+                        new_orbit = int(new_orbit[0] + 1)
+                        c.execute('UPDATE MMSet SET Orbits = ? WHERE Vertices=?',(new_orbit,entry))
+                        self.conn.commit()
                     
-                else:            
-                    new_orbit = int(new_orbit[0] + 1)
-                    c.execute('UPDATE MMSet SET Orbits = ? WHERE Vertices=?',(new_orbit,entry))
-                    self.conn.commit()
             if ticker[self.dim-1] == len(all_points) -1:
-                
                 for i in range(self.dim-2,-1,-1):
                     if ticker[i] + 1 != ticker[i+1]:
                         break        
-            
                 if i == 0 and ticker[0] +1 == ticker[1]:
                     break
-     
                 ticker[i] = ticker[i] + 1 
                 ticker[i+1:self.dim] = range(ticker[i]+1,ticker[i] + self.dim - i)
                 ticker[self.dim-1] = ticker[self.dim-1] -1
-
+                
             ticker[self.dim-1] = ticker[self.dim-1] +1
 
         
